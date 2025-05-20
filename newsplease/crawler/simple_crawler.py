@@ -7,6 +7,43 @@ import requests
 import urllib3
 
 from .response_decoder import decode_response
+import undetected_chromedriver as uc
+import time
+
+def init_driver():
+  global driver
+  options = uc.ChromeOptions()
+  options.add_argument("--window-size=1920,1080")
+  options.add_argument('--ignore-certificate-errors')
+  options.add_argument('--allow-running-insecure-content')
+  options.binary_location = '/usr/bin/google-chrome'
+  options.add_argument('--headless')
+  options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+  driver = uc.Chrome(options=options)
+  driver.set_page_load_timeout(20)
+  driver.set_script_timeout(20)
+  print("web driver started")
+  return driver
+
+def fetch_url_content(url):
+
+  try:
+    driver = init_driver()
+    driver.get(url)
+    time.sleep(5)
+    # Wait for the page to load completely
+    content = driver.page_source
+    status_code = 200
+    print(content)
+    response = {"status_code": status_code, "text": content, "content": content}
+    driver.implicitly_wait(20)
+    response = type('Response', (object,), response)  # Convert dict to object-like structure
+    return response
+  except Exception as e:
+    print(f"Error fetching the URL: {e}")
+    return None
+  finally:
+    driver.quit()
 
 MAX_FILE_SIZE = 20000000
 MIN_FILE_SIZE = 10
@@ -56,8 +93,9 @@ class SimpleCrawler(object):
         try:
             # read by streaming chunks (stream=True, iter_content=xx)
             # so we can stop downloading as soon as MAX_FILE_SIZE is reached
-            response = requests.get(
-                url, verify=False, allow_redirects=True, **request_args)
+            response = fetch_url_content(url)
+            # response = requests.get(
+            #     url, verify=False, allow_redirects=True, **request_args)
         except (requests.exceptions.MissingSchema, requests.exceptions.InvalidURL):
             LOGGER.error("malformed URL: %s", url)
         except requests.exceptions.TooManyRedirects:

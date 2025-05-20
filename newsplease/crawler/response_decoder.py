@@ -34,15 +34,6 @@ def detect_encoding(bytesobject):
 
 def decode_response(response):
     """Read the first chunk of server response and decode it"""
-    guessed_encoding = detect_encoding(response.content)
-    LOGGER.debug('response/guessed encoding: %s / %s', response.encoding, guessed_encoding)
-    # process
-    if guessed_encoding is not None:
-        try:
-            htmltext = response.content.decode(guessed_encoding)
-        except UnicodeDecodeError:
-            LOGGER.warning('encoding error: %s / %s', response.encoding, guessed_encoding)
-            htmltext = response.text
-    else:
-        htmltext = response.text
+
+    htmltext = response.text
     return htmltext
